@@ -1,0 +1,44 @@
+name: Build Content Project with Remote Assets
+
+on:
+    workflow_dispatch:
+        inputs:
+            configuration:
+                description: "Build configuration"
+                required: false
+                default: "Release"
+                type: choice
+                options:
+                    - Debug
+                    - Release
+
+env:
+    DotnetVersion: 9.0.307
+    Configuration: ${{ github.event.inputs.configuration || 'Release' }}
+
+jobs:
+  build-contentbuilder:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate global.json
+        run: |
+          echo '{ "sdk": { "version": "${{ env.DotnetVersion }}" } }' > global.json
+
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '${{ env.DotnetVersion }}'
+          global-json-file: "./global.json"
+
+      - name: Build Content (DesktopGL)
+        id: build_content
+        uses: MonoGame/monogame-actions/build-content@v1
+        with:
+          content-builder-path: 'Content'
+          assets-repo: 'MonoGame/MonoGame-CBPlatform-TestAssets'
+          assets-path: ''
+          monogame-platform: 'DesktopGL'
+          output-folder: './CBPlatformTest.DesktopGL/bin/${{ env.Configuration }}/net9.0/win-x64/Content'
+          upload-output: 'true'
